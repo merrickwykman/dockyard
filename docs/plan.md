@@ -184,16 +184,17 @@ Apply a preset on Enter, show simulated prompt examples, revert on R.
 - Revert option is correctly disabled when no backup exists
 ---
  
-## Task 7: Distribution
- 
+## Task 7a: GitHub Actions Release Workflow
+
 **Context**
 All features complete and tested. Now set up automated binary distribution.
- 
+
 **Objective**
 GitHub Actions workflow that builds and releases binaries for Windows, Mac, and Linux on a version tag push.
- 
+
 **Files to create**
 - .github/workflows/release.yml
+
 **Requirements**
 - Trigger on push of a tag matching `v*`
 - Build targets:
@@ -203,14 +204,57 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
   - linux/amd64 → dockyard-linux-amd64
 - Attach all binaries to a GitHub Release automatically
 - Release notes pulled from CHANGELOG.md
+
 **Do not**
 - Add code signing in v1
-- Set up Homebrew tap or winget manifest in v1
+
 **Acceptance checks**
 - Pushing a v* tag triggers the workflow
 - All four binaries are built without errors
 - Binaries are attached to the GitHub Release
 - Release notes are populated from CHANGELOG.md
+
+---
+
+## Task 7b: One-liner Install (Homebrew tap + PowerShell script)
+
+**Context**
+Release workflow is in place. Now make installation seamless — a single command anyone can paste into their terminal.
+
+**Objective**
+Homebrew tap for Mac/Linux and a PowerShell install script for Windows, so Dockyard is one line to install on any platform.
+
+**Files to create**
+- `install.ps1` — in the main `dockyard` repo, hosted at a stable URL
+- `homebrew-tap` — a separate repo at `github.com/MerrickWykman/homebrew-tap` containing a Homebrew formula `Formula/dockyard.rb`
+
+**Requirements**
+
+*Homebrew tap (`homebrew-tap` repo):*
+- Formula downloads the correct binary from the latest GitHub Release based on OS and arch
+- `brew install merrickwykman/tap/dockyard` installs and links the binary
+- Formula includes a `test` block: `system "#{bin}/dockyard", "--version"` (requires `--version` flag in the binary)
+
+*PowerShell script (`install.ps1` in main repo):*
+- Detects architecture (amd64 only in v1)
+- Downloads the correct binary from the latest GitHub Release via GitHub API
+- Places binary in `$env:USERPROFILE\.local\bin\dockyard.exe`
+- Checks whether that directory is in PATH; if not, prints clear instructions to add it
+- Single command to run: `irm https://raw.githubusercontent.com/MerrickWykman/dockyard/main/install.ps1 | iex`
+
+*Binary change (both platforms):*
+- Add `--version` flag to `main.go` that prints the version and exits — required by Homebrew formula test
+
+**Do not**
+- Submit to the official Homebrew core or winget community repo in v1
+- Add auto-update logic
+
+**Acceptance checks**
+- `brew install merrickwykman/tap/dockyard` installs and runs correctly on Mac
+- `irm ... | iex` installs and runs correctly on Windows
+- `dockyard --version` prints the version and exits cleanly
+- PATH guidance is shown on Windows when the install directory is not in PATH
+
 ---
 
 
@@ -256,7 +300,7 @@ Apply a preset on Enter, show simulated prompt examples, revert on R.
 
 ## Backlog
 
-Task 7 as defined above.
+Tasks 7a and 7b as defined above.
 
 ---
 
