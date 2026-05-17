@@ -21,10 +21,14 @@ jobs:
 
       - name: Build binaries
         run: |
-          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dockyard-windows-amd64.exe .
-          GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dockyard-mac-amd64 .
-          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dockyard-mac-arm64 .
-          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dockyard-linux-amd64 .
+          VERSION="${{ github.ref_name }}"
+          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-X main.version=${VERSION} -s -w" -o dockyard-windows-amd64.exe .
+          GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags="-X main.version=${VERSION} -s -w" -o dockyard-mac-amd64 .
+          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags="-X main.version=${VERSION} -s -w" -o dockyard-mac-arm64 .
+          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags="-X main.version=${VERSION} -s -w" -o dockyard-linux-amd64 .
+
+      - name: Print SHA256 checksums
+        run: sha256sum dockyard-windows-amd64.exe dockyard-mac-amd64 dockyard-mac-arm64 dockyard-linux-amd64
 
       - name: Create GitHub Release
         env:
