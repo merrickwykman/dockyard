@@ -2,7 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 
+	"github.com/MerrickWykman/dockyard/internal/config"
 	"github.com/MerrickWykman/dockyard/internal/detect"
 	"github.com/MerrickWykman/dockyard/internal/preset"
 	"github.com/charmbracelet/bubbles/list"
@@ -24,6 +27,8 @@ const (
 
 type fontInstallResult struct{ err error }
 type presetsLoaded struct{ items []preset.Preset }
+type applyResult struct{ err error }
+type revertResult struct{ err error }
 
 var starshipInstallCmd = map[string]string{
 	"mac":     "brew install starship",
@@ -43,6 +48,8 @@ type Model struct {
 	fontResult detect.FontResult
 	installErr string
 	list       list.Model
+	hasBackup  bool
+	statusMsg  string
 }
 
 func New() Model {
@@ -56,6 +63,15 @@ func (m Model) Init() tea.Cmd {
 	return func() tea.Msg { return detect.Starship() }
 }
 
+func checkBackup() bool {
+	p, err := config.Path()
+	if err != nil {
+		return false
+	}
+	_, err = os.Stat(p + ".bak")
+	return err == nil
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -67,11 +83,33 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "c", "enter":
+
+		case "c":
 			if m.state == stateFontWarning {
 				m.state = stateLoading
 				return m, func() tea.Msg { return presetsLoaded{preset.List()} }
 			}
+
+		case "enter":
+			if m.state == stateFontWarning {
+				m.state = stateLoading
+				return m, func() tea.Msg { return presetsLoaded{preset.List()} }
+			}
+			if m.state == stateReady {
+				sel, ok := m.list.SelectedItem().(presetItem)
+				if !ok {
+					break
+				}
+				name := sel.Preset.Name
+				return m, func() tea.Msg {
+					out, err := exec.Command("starship", "preset", name).Output()
+					if err != nil {
+						return applyResult{err}
+					}
+					return applyResult{err: config.Write(string(out))}
+				}
+			}
+
 		case "i":
 			if m.state == stateFontWarning && m.fontResult.Platform != "windows" {
 				m.state = stateFontInstalling
@@ -79,6 +117,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, func() tea.Msg {
 					return fontInstallResult{err: detect.InstallFont(platform)}
 				}
+			}
+
+		case "r":
+			if m.state == stateReady && m.hasBackup {
+				return m, func() tea.Msg {
+					return revertResult{err: config.Revert()}
+				}
+			}
+
+		case "up", "down", "k", "j":
+			if m.state == stateReady {
+				m.statusMsg = ""
 			}
 		}
 
@@ -111,7 +161,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case presetsLoaded:
 		m.list.SetItems(toListItems(msg.items))
+		m.hasBackup = checkBackup()
 		m.state = stateReady
+		return m, nil
+
+	case applyResult:
+		if msg.err != nil {
+			m.statusMsg = "Error: " + msg.err.Error()
+		} else {
+			m.statusMsg = "✓ Preset applied. Restart your terminal to see changes."
+			m.hasBackup = true
+		}
+		return m, nil
+
+	case revertResult:
+		if msg.err != nil {
+			m.statusMsg = "Error: " + msg.err.Error()
+		} else {
+			m.statusMsg = "✓ Config reverted."
+			m.hasBackup = checkBackup()
+		}
 		return m, nil
 	}
 
@@ -154,7 +223,7 @@ func (m Model) readyView() string {
 	half := m.width / 2
 	listPane := lipgloss.NewStyle().Width(half).Render(m.list.View())
 	sel, _ := m.list.SelectedItem().(presetItem)
-	detailPane := renderDetail(sel.Preset, m.width-half)
+	detailPane := renderDetail(sel.Preset, m.width-half, m.hasBackup, m.statusMsg)
 	return lipgloss.JoinHorizontal(lipgloss.Top, listPane, detailPane)
 }
 

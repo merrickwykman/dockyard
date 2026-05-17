@@ -3,7 +3,10 @@
     "allow": [
       "Bash(go mod *)",
       "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Go\\\\bin;$env:PATH\"; Set-Location \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\"; go mod tidy)",
-      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\\\\internal\\\\detect\")"
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\\\\internal\\\\detect\")",
+      "PowerShell(Get-Command go -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PATH)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\Go\\\\bin\\\\go.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:USERPROFILE\\\\go\\\\bin\\\\go.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Go\\\\bin\\\\go.exe\" -ErrorAction SilentlyContinue)"
     ]
   }
 }

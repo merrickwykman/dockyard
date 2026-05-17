@@ -217,42 +217,46 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
 
 ## Active task
 
-### Task 5: Preset Browser
+### Task 6: Simulated Prompt Examples + Apply & Revert
 
 **Context**
-Detection flows are complete. Now build the core UI — the preset list.
+Preset browser is working. Now add the apply action and simulated examples.
 
 **Objective**
-Display all available Starship presets in a navigable TUI list with names and descriptions.
+Apply a preset on Enter, show simulated prompt examples, revert on R.
 
 **Files to create or edit**
-- internal/preset/preset.go — create
-- internal/ui/list.go — edit (replace placeholder with real data)
-- internal/ui/detail.go — create
+- internal/preset/preview.go — create
+- internal/ui/detail.go — edit (add examples to detail pane)
+- internal/ui/app.go — edit (wire up key bindings)
 
 **Requirements**
-- Call `starship preset list` to retrieve available presets
-- Parse output into name + description pairs
-- Display in a two-pane layout: list on left, detail on right
-- Arrow key navigation updates detail pane in real time
-- Detail pane shows preset name, description, and key binding hints
-- Neutral/minimal colour scheme using Lip Gloss — no strong colours in chrome
+- On Enter: back up current starship.toml, write selected preset, show confirmation
+- Render simulated prompt examples in detail pane using preset TOML symbols:
+  - Plain directory: `~/projects/dockyard`
+  - Git repo clean: `~/projects/dockyard on main`
+  - Git repo dirty: `~/projects/dockyard on main [+]`
+  - Language runtime: `~/projects/dockyard via node v18`
+- On R: restore starship.toml.bak, show confirmation
+- If no backup exists, R is greyed out with explanation
+- On Q: exit cleanly
 
 **Do not**
-- Apply any preset in this task
-- Implement simulated examples yet
+- Execute a live shell to generate previews
+- Add any config editing beyond preset apply
 
 **Acceptance checks**
-- [ ] All presets from `starship preset list` appear in the list
-- [ ] Navigation updates detail pane correctly
-- [ ] Layout renders cleanly at standard terminal widths (80col minimum)
-- [ ] No crashes on empty or unexpected preset list output
+- [ ] Preset is correctly written to starship.toml on Enter
+- [ ] Backup exists after apply
+- [ ] Simulated examples render correctly for each preset
+- [ ] Revert restores previous config correctly
+- [ ] Revert option is correctly disabled when no backup exists
 
 ---
 
 ## Backlog
 
-Tasks 6–7 as defined above.
+Task 7 as defined above.
 
 ---
 
@@ -269,3 +273,6 @@ Go module initialised at `github.com/MerrickWykman/dockyard`. Bubble Tea TUI ren
 
 ### Task 4: Nerd Font Detection ✓
 `internal/detect/font.go` checks installed fonts via `fc-list` (Mac/Linux) or scanning the system Fonts directory (Windows). Result cached to `os.UserConfigDir()/dockyard/font-ok` after first pass. `internal/ui/app.go` extended with `stateFontChecking`, `stateFontWarning`, and `stateFontInstalling`. Mac/Linux get an `[I] Install` option; Windows shows a download guide. User can always press `C` to proceed past the warning.
+
+### Task 5: Preset Browser ✓
+`internal/preset/preset.go` calls `starship preset list` and parses output into name/description pairs. `internal/ui/list.go` replaced with real preset data. `internal/ui/detail.go` created with two-pane layout. Arrow key navigation updates detail pane in real time. Neutral Lip Gloss colour scheme. Renders cleanly at 80-column minimum.
