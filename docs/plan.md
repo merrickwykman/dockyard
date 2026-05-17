@@ -217,44 +217,42 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
 
 ## Active task
 
-### Task 4: Nerd Font Detection
+### Task 5: Preset Browser
 
 **Context**
-Config management is in place. Now add font detection before the main UI loads.
+Detection flows are complete. Now build the core UI — the preset list.
 
 **Objective**
-Detect whether a Nerd Font is active. Guide the user to install one if not.
+Display all available Starship presets in a navigable TUI list with names and descriptions.
 
 **Files to create or edit**
-- internal/detect/font.go — create
-- internal/ui/app.go — edit (integrate into launch flow)
+- internal/preset/preset.go — create
+- internal/ui/list.go — edit (replace placeholder with real data)
+- internal/ui/detail.go — create
 
 **Requirements**
-- Render a known Nerd Font glyph and check cell width
-- If detection passes, cache result and proceed silently
-- Cache stored in user config directory — do not re-run on every launch
-- If detection fails:
-  - Mac: offer automatic install via Homebrew Cask
-  - Windows: display clear step-by-step guide with direct download URL and install instructions
-  - Linux: offer automatic download to ~/.local/share/fonts/ + fc-cache
-- Detection runs after Starship check, before main UI
+- Call `starship preset list` to retrieve available presets
+- Parse output into name + description pairs
+- Display in a two-pane layout: list on left, detail on right
+- Arrow key navigation updates detail pane in real time
+- Detail pane shows preset name, description, and key binding hints
+- Neutral/minimal colour scheme using Lip Gloss — no strong colours in chrome
 
 **Do not**
-- Attempt silent font install on Windows
-- Block app permanently if font detection fails — allow user to proceed with a warning
+- Apply any preset in this task
+- Implement simulated examples yet
 
 **Acceptance checks**
-- [ ] Glyph test runs correctly in supported terminals
-- [ ] Cache prevents re-running on subsequent launches
-- [ ] Mac/Linux auto-install flow executes without errors
-- [ ] Windows guidance screen is clear and complete
-- [ ] User can proceed past font warning if they choose
+- [ ] All presets from `starship preset list` appear in the list
+- [ ] Navigation updates detail pane correctly
+- [ ] Layout renders cleanly at standard terminal widths (80col minimum)
+- [ ] No crashes on empty or unexpected preset list output
 
 ---
 
 ## Backlog
 
-Tasks 5–7 as defined above.
+Tasks 6–7 as defined above.
 
 ---
 
@@ -268,3 +266,6 @@ Go module initialised at `github.com/MerrickWykman/dockyard`. Bubble Tea TUI ren
 
 ### Task 3: Config Management ✓
 `internal/config/config.go` exposes `Path()`, `Read()`, `Write()`, and `Revert()`. `Write()` creates a single-level `.bak` before every write. `Revert()` restores from `.bak` and returns a descriptive error if none exists. Pure logic — no UI changes. Standard library only, no new dependencies.
+
+### Task 4: Nerd Font Detection ✓
+`internal/detect/font.go` checks installed fonts via `fc-list` (Mac/Linux) or scanning the system Fonts directory (Windows). Result cached to `os.UserConfigDir()/dockyard/font-ok` after first pass. `internal/ui/app.go` extended with `stateFontChecking`, `stateFontWarning`, and `stateFontInstalling`. Mac/Linux get an `[I] Install` option; Windows shows a download guide. User can always press `C` to proceed past the warning.

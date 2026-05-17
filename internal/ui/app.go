@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/MerrickWykman/dockyard/internal/detect"
+	"github.com/MerrickWykman/dockyard/internal/preset"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,10 +18,12 @@ const (
 	stateFontChecking
 	stateFontWarning
 	stateFontInstalling
+	stateLoading
 	stateReady
 )
 
 type fontInstallResult struct{ err error }
+type presetsLoaded struct{ items []preset.Preset }
 
 var starshipInstallCmd = map[string]string{
 	"mac":     "brew install starship",
@@ -34,6 +37,8 @@ var dimStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 
 type Model struct {
 	state      appState
+	width      int
+	height     int
 	starship   detect.Result
 	fontResult detect.FontResult
 	installErr string
@@ -54,8 +59,9 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.width, m.height = msg.Width, msg.Height
 		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width/2-h, msg.Height-v)
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -63,8 +69,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "c", "enter":
 			if m.state == stateFontWarning {
-				m.state = stateReady
-				return m, nil
+				m.state = stateLoading
+				return m, func() tea.Msg { return presetsLoaded{preset.List()} }
 			}
 		case "i":
 			if m.state == stateFontWarning && m.fontResult.Platform != "windows" {
@@ -88,10 +94,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case detect.FontResult:
 		m.fontResult = msg
 		if msg.Supported {
-			m.state = stateReady
-		} else {
-			m.state = stateFontWarning
+			m.state = stateLoading
+			return m, func() tea.Msg { return presetsLoaded{preset.List()} }
 		}
+		m.state = stateFontWarning
 		return m, nil
 
 	case fontInstallResult:
@@ -102,6 +108,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.state = stateFontChecking
 		return m, func() tea.Msg { return detect.Font() }
+
+	case presetsLoaded:
+		m.list.SetItems(toListItems(msg.items))
+		m.state = stateReady
+		return m, nil
 	}
 
 	if m.state == stateReady {
@@ -117,7 +128,6 @@ func (m Model) View() string {
 	switch m.state {
 	case stateDetecting:
 		return docStyle.Render("Checking for Starship…")
-
 	case stateNotFound:
 		cmd := starshipInstallCmd[m.starship.Platform]
 		body := fmt.Sprintf(
@@ -127,19 +137,25 @@ func (m Model) View() string {
 			dimStyle.Render("Press Q to quit."),
 		)
 		return docStyle.Render(body)
-
 	case stateFontChecking:
 		return docStyle.Render("Checking for Nerd Font…")
-
 	case stateFontInstalling:
 		return docStyle.Render("Installing font…")
-
 	case stateFontWarning:
 		return docStyle.Render(m.fontWarningView())
-
+	case stateLoading:
+		return docStyle.Render("Loading presets…")
 	default:
-		return docStyle.Render(m.list.View())
+		return m.readyView()
 	}
+}
+
+func (m Model) readyView() string {
+	half := m.width / 2
+	listPane := lipgloss.NewStyle().Width(half).Render(m.list.View())
+	sel, _ := m.list.SelectedItem().(presetItem)
+	detailPane := renderDetail(sel.Preset, m.width-half)
+	return lipgloss.JoinHorizontal(lipgloss.Top, listPane, detailPane)
 }
 
 func (m Model) fontWarningView() string {
