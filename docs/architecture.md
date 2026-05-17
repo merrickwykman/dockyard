@@ -1,106 +1,45 @@
-# Architecture
+Dockyard — Architecture
+Auth
+None required. Dockyard is a local tool with no network dependencies beyond Starship's preset system and optional font download links.
+Stack
 
-## Stack
-- Framework: Next.js (App Router)
-- Language: TypeScript
-- Styling: Tailwind CSS
-- Components: shadcn/ui
-- Database: Supabase (PostgreSQL + Auth + Storage)
-- Validation: Zod
-- Forms: React Hook Form
-- Deployment: Vercel
+Language: Go
+TUI: Bubble Tea + Lip Gloss + Bubbles
+Config target: ~/.config/starship.toml (cross-platform aware)
+Distribution: single binary via GitHub Actions (Windows / Mac / Linux)
+No database, no backend, no runtime dependencies
 
-## Folder structure
-```
-src/
-├─ app/                    ← Next.js pages and routes
-│   ├─ (auth)/             ← auth routes grouped
-│   ├─ (dashboard)/        ← protected app routes
-│   └─ api/                ← API routes
-├─ components/
-│   ├─ ui/                 ← shadcn/ui primitives
-│   └─ [feature]/          ← feature-specific components
-├─ lib/
-│   ├─ supabase.ts         ← Supabase client
-│   ├─ utils.ts            ← shared utilities
-│   └─ validations/        ← Zod schemas
-└─ types/
-    └─ index.ts            ← all TypeScript types
-```
+Config Path Handling
+Starship's config lives at:
 
-## Data model
-<!--
-Define every entity and relationship before writing any code.
-This is the one thing that's hard to change later.
+Mac/Linux: ~/.config/starship.toml
+Windows: %USERPROFILE%\.config\starship.toml
 
-Example:
-User
-- id: uuid
-- email: string
-- createdAt: timestamp
+Resolved at runtime using Go's os.UserHomeDir(). No hardcoded paths.
+Backup Strategy
+Before any write to starship.toml, the tool creates starship.toml.bak in the same directory. Single level only — one backup at a time. If a backup already exists it is overwritten. No versioned history in v1.
+Nerd Font Detection
+A known Nerd Font glyph is rendered in the terminal and its cell width is checked. If it renders correctly, the check passes silently. If not, the user is guided to install a compatible font. Result is cached locally after first run so the check does not repeat on every launch.
+Font Installation by Platform
 
-Post
-- id: uuid
-- userId: uuid (→ User)
-- title: string
-- content: string
-- publishedAt: timestamp | null
--->
+Mac: automatic install via Homebrew Cask
+Linux: automatic download to ~/.local/share/fonts/, run fc-cache
+Windows: detection only — if no Nerd Font is found, show a clear step-by-step in-TUI guide with direct download URL and exact installation instructions. No silent install attempted on Windows in v1.
 
-## Auth
-<!--
-Does this need authentication?
-- None — personal local tool
-- Supabase Auth — email/password or magic link
-- OAuth — Google, GitHub etc
+Preset Source
+Presets are sourced via starship preset list — Dockyard calls the Starship binary directly rather than maintaining its own copy of preset data. This keeps Dockyard current with any presets Starship adds without maintenance overhead.
+Simulated Prompt Examples
+When a preset is applied, Dockyard renders static string examples using the actual characters and symbols from the preset's TOML. No live shell execution. Examples shown:
 
-If auth is needed, define protected vs public routes here.
--->
+Plain directory (~/projects/dockyard)
+Git repo on a clean branch
+Git repo with uncommitted changes
+Directory with a recognised language runtime (e.g. Node, Python)
 
-## Key technical decisions
-<!--
-Record decisions and why — prevents relitigating them later.
+Architectural Exclusions (V1)
 
-Example:
-- Using Supabase direct queries over Drizzle — simpler for solo 
-  project, RLS handles security at database level
-- No separate API layer — Next.js API routes sufficient for this scope
--->
+No custom module editing
+No theme import/export
+No network calls beyond optional font download
+No persistent app state beyond font detection cache
 
-## Environment variables
-<!--
-List all required env vars so setup is never guesswork.
-
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
--->
-
-## What NOT to add yet
-<!--
-Explicitly list things you are deliberately excluding from this version.
-Prevents Claude from gold-plating the architecture.
-
-Example:
-- No Redis caching
-- No background jobs
-- No webhooks
-- No mobile app
--->
-
-## Error handling
-- API routes return consistent error shapes: { error: string, code?: string }
-- User-facing errors show friendly messages, never raw error objects
-- Server errors log to console in development, to a logging 
-  service in production
-- Failed Supabase queries surface as 500s, not silent nulls
-- Add Sentry or similar before launch with real users
-
-## Schema migrations
-For Supabase: run schema changes via the SQL Editor in the 
-Supabase dashboard. Save every migration as a SQL file in 
-supabase/migrations/[timestamp]-[description].sql so changes 
-are tracked and reproducible. Never modify the database schema 
-from application code.
-For production with real users: test migrations in a Supabase 
-branch before applying to production. Have a rollback plan ready.
