@@ -217,41 +217,40 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
 
 ## Active task
 
-### Task 2: Starship Detection
+### Task 3: Config Management
 
 **Context**
-Scaffold is in place. TUI renders. Now add the first real logic layer.
+Starship detection is working. Now add the ability to read and write starship.toml safely.
 
 **Objective**
-On launch, detect whether Starship is installed and accessible. If not, show platform-specific install guidance.
+Locate, read, back up, and write starship.toml cross-platform.
 
-**Files to create or edit**
-- internal/detect/starship.go — create
-- internal/ui/app.go — edit (integrate detection into launch flow)
+**Files to create**
+- internal/config/config.go
 
 **Requirements**
-- Check for `starship` in PATH
-- If found, retrieve version and proceed
-- If not found, display a clear message in the TUI with platform-specific install instructions:
-  - Mac: `brew install starship`
-  - Windows: `winget install starship`
-  - Linux: curl install script
-- Detection runs before the main UI loads
+- Resolve config path using `os.UserHomeDir()` — no hardcoded paths
+- Read existing starship.toml if present
+- Before any write, create starship.toml.bak in the same directory
+- Write new config content to starship.toml
+- Expose a Revert() function that restores from .bak
+- If no .bak exists, Revert() returns a clear error
 
 **Do not**
-- Auto-install Starship silently
-- Proceed to main UI if Starship is not found
+- Delete or overwrite .bak without first creating a new one
+- Implement any UI for this task — logic only
 
 **Acceptance checks**
-- [ ] With Starship installed: app proceeds to main UI
-- [ ] With Starship removed from PATH: app shows guidance screen
-- [ ] Platform detection works on all three OS targets
+- [ ] Config path resolves correctly on Windows, Mac, and Linux
+- [ ] Backup is created before every write
+- [ ] Revert restores previous config correctly
+- [ ] Revert returns appropriate error when no backup exists
 
 ---
 
 ## Backlog
 
-Tasks 3–7 as defined above.
+Tasks 4–7 as defined above.
 
 ---
 
@@ -259,3 +258,6 @@ Tasks 3–7 as defined above.
 
 ### Task 1: Project Scaffold ✓
 Go module initialised at `github.com/MerrickWykman/dockyard`. Bubble Tea TUI renders a placeholder list of 5 dummy preset items using `bubbles/list`. App launches in alt-screen mode, exits cleanly on Q. No real logic or Starship integration — scaffold only.
+
+### Task 2: Starship Detection ✓
+`internal/detect/starship.go` checks PATH via `exec.LookPath`, retrieves the version string, and resolves the platform from `runtime.GOOS`. `internal/ui/app.go` extended with a three-state machine (`detecting` → `notFound` / `ready`). Not-found screen shows the correct platform-specific install command. Q exits cleanly from all states.
