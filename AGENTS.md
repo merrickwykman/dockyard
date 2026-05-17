@@ -55,7 +55,7 @@ If any answer is uncertain — stop and flag it before proceeding.
 3. Implement the smallest useful slice only
 4. After implementing, run lint and type checks
 5. Fix only errors related to the current task
-6. Suggest a onle-line commit message after every completed task.
+6. Suggest a one-line commit message after every completed task. Keep it concise.
 
 ## When asked to write a new task work order:
 1. Enter plan mode first

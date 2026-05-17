@@ -217,40 +217,44 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
 
 ## Active task
 
-### Task 3: Config Management
+### Task 4: Nerd Font Detection
 
 **Context**
-Starship detection is working. Now add the ability to read and write starship.toml safely.
+Config management is in place. Now add font detection before the main UI loads.
 
 **Objective**
-Locate, read, back up, and write starship.toml cross-platform.
+Detect whether a Nerd Font is active. Guide the user to install one if not.
 
-**Files to create**
-- internal/config/config.go
+**Files to create or edit**
+- internal/detect/font.go — create
+- internal/ui/app.go — edit (integrate into launch flow)
 
 **Requirements**
-- Resolve config path using `os.UserHomeDir()` — no hardcoded paths
-- Read existing starship.toml if present
-- Before any write, create starship.toml.bak in the same directory
-- Write new config content to starship.toml
-- Expose a Revert() function that restores from .bak
-- If no .bak exists, Revert() returns a clear error
+- Render a known Nerd Font glyph and check cell width
+- If detection passes, cache result and proceed silently
+- Cache stored in user config directory — do not re-run on every launch
+- If detection fails:
+  - Mac: offer automatic install via Homebrew Cask
+  - Windows: display clear step-by-step guide with direct download URL and install instructions
+  - Linux: offer automatic download to ~/.local/share/fonts/ + fc-cache
+- Detection runs after Starship check, before main UI
 
 **Do not**
-- Delete or overwrite .bak without first creating a new one
-- Implement any UI for this task — logic only
+- Attempt silent font install on Windows
+- Block app permanently if font detection fails — allow user to proceed with a warning
 
 **Acceptance checks**
-- [ ] Config path resolves correctly on Windows, Mac, and Linux
-- [ ] Backup is created before every write
-- [ ] Revert restores previous config correctly
-- [ ] Revert returns appropriate error when no backup exists
+- [ ] Glyph test runs correctly in supported terminals
+- [ ] Cache prevents re-running on subsequent launches
+- [ ] Mac/Linux auto-install flow executes without errors
+- [ ] Windows guidance screen is clear and complete
+- [ ] User can proceed past font warning if they choose
 
 ---
 
 ## Backlog
 
-Tasks 4–7 as defined above.
+Tasks 5–7 as defined above.
 
 ---
 
@@ -261,3 +265,6 @@ Go module initialised at `github.com/MerrickWykman/dockyard`. Bubble Tea TUI ren
 
 ### Task 2: Starship Detection ✓
 `internal/detect/starship.go` checks PATH via `exec.LookPath`, retrieves the version string, and resolves the platform from `runtime.GOOS`. `internal/ui/app.go` extended with a three-state machine (`detecting` → `notFound` / `ready`). Not-found screen shows the correct platform-specific install command. Q exits cleanly from all states.
+
+### Task 3: Config Management ✓
+`internal/config/config.go` exposes `Path()`, `Read()`, `Write()`, and `Revert()`. `Write()` creates a single-level `.bak` before every write. `Revert()` restores from `.bak` and returns a descriptive error if none exists. Pure logic — no UI changes. Standard library only, no new dependencies.
