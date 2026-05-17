@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(go mod *)",
-      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Go\\\\bin;$env:PATH\"; Set-Location \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\"; go mod tidy)"
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Go\\\\bin;$env:PATH\"; Set-Location \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\"; go mod tidy)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\lukew\\\\Documents\\\\Claude Projects\\\\Dockyard\\\\internal\\\\detect\")"
     ]
   }
 }

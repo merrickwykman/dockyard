@@ -217,90 +217,45 @@ GitHub Actions workflow that builds and releases binaries for Windows, Mac, and 
 
 ## Active task
 
-<!--
-Only ever one active task.
-Move to Completed when done, promote next from Backlog.
--->
+### Task 2: Starship Detection
 
-<!--
-Choose one format below. Delete the other before filling in.
-Simple: for single-file changes, UI tweaks, obvious scope.
-Full: for anything touching multiple systems, auth, data model, AI features, or payments.
+**Context**
+Scaffold is in place. TUI renders. Now add the first real logic layer.
 
-### Task [N]: [Name] (simple)
-**What:** One sentence — what exists after this that didn't before
-**Files:** List files to touch
-**Done when:** One or two acceptance checks
-**Do not:** One constraint if needed
-**Depends on:** Task number and name, or leave blank
+**Objective**
+On launch, detect whether Starship is installed and accessible. If not, show platform-specific install guidance.
 
----
+**Files to create or edit**
+- internal/detect/starship.go — create
+- internal/ui/app.go — edit (integrate detection into launch flow)
 
-### Task [N]: [Name]
+**Requirements**
+- Check for `starship` in PATH
+- If found, retrieve version and proceed
+- If not found, display a clear message in the TUI with platform-specific install instructions:
+  - Mac: `brew install starship`
+  - Windows: `winget install starship`
+  - Linux: curl install script
+- Detection runs before the main UI loads
 
-#### Context
-Why does this task exist?
-What user problem does it solve?
-What came before it that this depends on?
+**Do not**
+- Auto-install Starship silently
+- Proceed to main UI if Starship is not found
 
-#### Objective
-One sentence. What should exist after this task that doesn't exist now?
-
-#### Files to create or edit
-Be specific. Claude will only touch these files.
-- src/app/[route]/page.tsx — create
-- src/components/[Component]/index.tsx — create
-- src/lib/supabase.ts — edit
-
-#### Requirements
-Specific, testable statements.
-- User can do X
-- Clicking Y does Z
-- Data is saved to [table]
-
-#### Do not do
-Explicit constraints. Prevents Claude gold-plating.
-- Do not add animations yet
-- Do not implement [future feature]
-- Do not modify [unrelated file]
-
-#### Future considerations
-Optional. Flag things deliberately deferred.
-- Auth will be added in Task [N]
-- Database persistence planned for Task [N]
-- Mobile layout addressed in polish phase
-
-#### Depends on (if applicable)
-List any tasks that must be complete before this one starts.
-Leave blank if none.
-
-#### Acceptance checks
-How do you verify this is done correctly?
-- [ ] Check 1
-- [ ] Check 2
-- [ ] Check 3
--->
+**Acceptance checks**
+- [ ] With Starship installed: app proceeds to main UI
+- [ ] With Starship removed from PATH: app shows guidance screen
+- [ ] Platform detection works on all three OS targets
 
 ---
 
 ## Backlog
 
-<!--
-Future tasks in rough priority order.
-Promote to Active when current task is complete.
-
-### Task [N]: [Name]
-One line description.
--->
+Tasks 3–7 as defined above.
 
 ---
 
 ## Completed
 
-<!--
-Move finished tasks here.
-Gives a record of progress and context for future tasks.
-
-### Task [N]: [Name] ✓
-Brief note on what was built and any decisions made.
--->
+### Task 1: Project Scaffold ✓
+Go module initialised at `github.com/MerrickWykman/dockyard`. Bubble Tea TUI renders a placeholder list of 5 dummy preset items using `bubbles/list`. App launches in alt-screen mode, exits cleanly on Q. No real logic or Starship integration — scaffold only.
