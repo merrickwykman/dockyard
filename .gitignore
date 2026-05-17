@@ -1,0 +1,21 @@
+# Binaries
+dockyard
+dockyard-*
+*.exe
+
+# Test binary
+*.test
+
+# Coverage
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Internal planning docs
+docs/architecture.md
+docs/plan.md
